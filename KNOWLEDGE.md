@@ -21,6 +21,22 @@ default: 10 looping VUs for 10s
 
 **Important:** `10 VUs` does not mean 10 simultaneous requests at all times. Each virtual user runs the script and starts over when its iteration finishes.
 
+The execution model — each VU loops through iterations, and each iteration runs your script (which may send several HTTP requests):
+
+```mermaid
+flowchart LR
+    T["Test run<br/>10 VUs for 10s"] --> V1["VU 1"]
+    T --> V2["VU 2"]
+    T --> Vn["VU ...10"]
+
+    V1 --> I1["iteration<br/>(run the script)"]
+    I1 --> R1["HTTP request(s)"]
+    R1 --> S1["sleep(1)"]
+    S1 --> I1
+```
+
+Every VU repeats `iteration → request(s) → sleep → iteration` until the duration ends. Totals like `iterations` and `http_reqs` are the sum across all VUs.
+
 ## HTTP response times
 
 The `http_req_duration` line reports the distribution of response times:
@@ -49,6 +65,19 @@ How it's computed, conceptually:
 3. The value at that position is the 95th percentile.
 
 So the percentile is a *position in the sorted data*, not an average. The median is simply `p(50)` — the halfway point.
+
+Visually, with requests sorted fastest to slowest, each percentile is a cut point along that line:
+
+```mermaid
+flowchart LR
+    A["Fastest<br/>min"] --> B["p(50)<br/>median"]
+    B --> C["p(90)"]
+    C --> D["p(95)"]
+    D --> E["p(99)"]
+    E --> F["Slowest<br/>max"]
+```
+
+Everything to the left of `p(95)` is the 95% of requests that were that fast or faster; the small slice to its right is the slowest 5%.
 
 ### What it measures (and why it matters)
 
@@ -136,10 +165,25 @@ export default function () {
 }
 ```
 
-This ramps virtual users progressively and evaluates two objectives:
+This ramps virtual users progressively, then checks the results against the thresholds to decide pass or fail:
+
+```mermaid
+flowchart TD
+    S1["Stage 1<br/>ramp to 10 VUs"] --> S2["Stage 2<br/>ramp to 50 VUs"]
+    S2 --> S3["Stage 3<br/>ramp to 100 VUs"]
+    S3 --> S4["Stage 4<br/>ramp to 200 VUs"]
+    S4 --> S5["Stage 5<br/>ramp down to 0"]
+    S5 --> T{"Thresholds met?<br/>p(95) &lt; 500ms<br/>errors &lt; 1%"}
+    T -->|yes| P["PASS<br/>exit code 0"]
+    T -->|no| F["FAIL<br/>non-zero exit code"]
+```
+
+It evaluates two objectives:
 
 - **p95** stays below 500 ms.
 - HTTP error rate stays below 1%.
+
+If any threshold is breached, k6 exits with a non-zero code — useful for failing a CI pipeline automatically.
 
 Run scalability tests only in an authorized environment with enough capacity — especially against production.
 
