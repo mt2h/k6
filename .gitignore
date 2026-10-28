@@ -1,0 +1,21 @@
+# k6 output and results
+*.json.log
+summary.json
+results/
+*.csv
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
