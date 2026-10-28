@@ -58,3 +58,5 @@ default ✓ [ 100% ] 10 VUs  10s
 - **http_req_duration** — response time stats; `p(90)`/`p(95)` are the 90th/95th percentiles.
 - **iterations** — how many times the default function ran across all VUs.
 - **data_received / data_sent** — network throughput during the test.
+
+For a deeper explanation of these metrics — percentiles, RPS, iteration vs. request duration, thresholds, and scalability testing — see [KNOWLEDGE.md](KNOWLEDGE.md).

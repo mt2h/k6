@@ -27,6 +27,7 @@ k6 version
 .
 ├── scripts/       # k6 test scripts
 ├── EXAMPLES.md    # Each example: how to run it, what it does, and its output
+├── KNOWLEDGE.md   # How to read k6 results: metrics, percentiles, scalability
 ├── README.md
 └── AGENTS.md
 ```
