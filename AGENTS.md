@@ -10,6 +10,7 @@ A k6 load-testing course. k6 is installed natively and run from the console (`k6
 
 - `scripts/` — k6 test scripts written in JavaScript (ES modules).
 - `EXAMPLES.md` — per-example docs: how to run each script, what it does, and its output.
+- `KNOWLEDGE.md` — reference for interpreting k6 results (metrics, percentiles, scalability).
 - `README.md` — course overview and usage.
 
 ## Running tests
