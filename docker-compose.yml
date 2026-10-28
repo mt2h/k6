@@ -1,9 +1,0 @@
-services:
-  k6:
-    image: grafana/k6:latest
-    # Mount the local scripts directory into the container so k6 can read your tests.
-    volumes:
-      - ./scripts:/scripts
-    # Default command: run the sample script. Override from the CLI to run other scripts.
-    command: run /scripts/script.js
-    working_dir: /scripts

@@ -2,6 +2,8 @@
 *.json.log
 summary.json
 results/
+report.html
+*.html
 *.csv
 
 # Logs
