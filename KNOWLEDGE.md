@@ -25,13 +25,53 @@ default: 10 looping VUs for 10s
 
 The `http_req_duration` line reports the distribution of response times:
 
-- **avg** — average response time.
-- **med** — median: half of the requests responded in this time or less.
-- **p(90)** — 90th percentile: 90% of requests responded in this time or less.
-- **p(95)** — 95th percentile: 95% of requests responded in this time or less.
-- **max** — the slowest request.
+```
+http_req_duration: avg=86.27ms min=11.9ms med=88.21ms max=163.37ms p(90)=159.21ms p(95)=160.48ms
+```
 
-The **p95** is especially useful for evaluating performance: it captures the experience of the slower requests without relying solely on the maximum.
+- **avg** — average (mean) response time across all requests.
+- **min** — the single fastest request.
+- **med** — median: half of the requests responded in this time or less.
+- **p(90)** — 90th percentile (see below).
+- **p(95)** — 95th percentile.
+- **max** — the single slowest request.
+
+### What a percentile is
+
+A percentile is a value below which a given share of your measurements fall, once they are sorted from fastest to slowest.
+
+**`p(95) = 160.48 ms` means: 95% of requests completed in 160.48 ms or less, and the slowest 5% took longer than that.**
+
+How it's computed, conceptually:
+
+1. Take every request's duration and sort them from smallest to largest.
+2. To find `p(95)`, walk 95% of the way through that sorted list.
+3. The value at that position is the 95th percentile.
+
+So the percentile is a *position in the sorted data*, not an average. The median is simply `p(50)` — the halfway point.
+
+### What it measures (and why it matters)
+
+A percentile measures the **experience of the slowest requests**, which is exactly what users notice. It answers "how bad does it get for most of my traffic?" without being dragged around by a single outlier.
+
+Common percentiles and what they tell you:
+
+| Percentile | Reading | Typical use |
+|---|---|---|
+| `p(50)` / median | Half of requests are faster than this | The "typical" request |
+| `p(90)` | 9 out of 10 requests are this fast or faster | Catches the slower tail |
+| `p(95)` | 19 out of 20 requests are this fast or faster | Common SLA/SLO target |
+| `p(99)` | 99 out of 100 requests are this fast or faster | Worst-case for almost everyone |
+
+### Why not just use the average?
+
+The average hides problems. If 95 requests take 50 ms and 5 take 3000 ms, the average still looks acceptable, but 1 in 20 users had a terrible experience. A percentile exposes that tail:
+
+- **avg** is skewed by outliers — a few very slow (or very fast) requests move it.
+- **p(95)/p(99)** stay representative because they describe a fixed position in the distribution.
+- **max** is a single request and can be pure noise (one GC pause, one network blip).
+
+That's why SLAs and SLOs are usually written against `p(95)` or `p(99)`, not the average. In the example above, `avg=86.27 ms` but `p(95)=160.48 ms` — the typical request is fast, yet the slower slice is almost twice as slow, and that slice is what you design capacity and thresholds around.
 
 `http_req_failed` is the share of failed requests. `0.00%` means every request met k6's expected-response criteria — but that alone does not guarantee the response *data* was correct, nor that the app tolerates higher load. Use `check()` assertions and larger tests to confirm.
 
